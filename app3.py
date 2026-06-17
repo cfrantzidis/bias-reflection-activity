@@ -86,14 +86,22 @@ st.markdown(
 
         .stApp {{
             background: linear-gradient(180deg, #ffffff 0%, {ALBA_COLORS["light"]} 100%);
+            color: #222222 !important;
         }}
 
         h1, h2, h3 {{
-            color: {ALBA_COLORS["purple"]};
+            color: {ALBA_COLORS["purple"]} !important;
+        }}
+
+        .stApp p,
+        .stApp li,
+        .stApp label {{
+            color: #222222;
         }}
 
         .alba-card {{
-            background: white;
+            background: #ffffff !important;
+            color: #222222 !important;
             padding: 1.25rem 1.35rem;
             border-radius: 16px;
             border-left: 6px solid {ALBA_COLORS["blue"]};
@@ -101,17 +109,74 @@ st.markdown(
             margin-bottom: 1rem;
         }}
 
+        .alba-card,
+        .alba-card p,
+        .alba-card strong,
+        .alba-card span,
+        .alba-card div {{
+            color: #222222 !important;
+        }}
+
         .education-card {{
-            background: #ffffff;
+            background: #ffffff !important;
+            color: #222222 !important;
             padding: 1.2rem 1.35rem;
             border-radius: 16px;
             border: 2px solid {ALBA_COLORS["green"]};
             margin-top: 1rem;
         }}
 
+        .education-card,
+        .education-card p,
+        .education-card strong,
+        .education-card span,
+        .education-card div {{
+            color: #222222 !important;
+        }}
+
+        .education-card h3 {{
+            color: {ALBA_COLORS["purple"]} !important;
+        }}
+
         .small-muted {{
-            color: #626262;
+            color: #626262 !important;
             font-size: 0.92rem;
+        }}
+
+        div[data-testid="stRadio"] label,
+        div[data-testid="stRadio"] label p,
+        div[data-testid="stTextArea"] label,
+        div[data-testid="stTextArea"] label p,
+        div[data-testid="stSelectbox"] label,
+        div[data-testid="stSelectbox"] label p {{
+            color: #222222 !important;
+        }}
+
+        textarea,
+        input {{
+            background-color: #ffffff !important;
+            color: #222222 !important;
+            -webkit-text-fill-color: #222222 !important;
+        }}
+
+        div[data-baseweb="select"] > div {{
+            background-color: #ffffff !important;
+            color: #222222 !important;
+        }}
+
+        div[data-baseweb="select"] span {{
+            color: #222222 !important;
+        }}
+
+        div[data-testid="stExpander"] details,
+        div[data-testid="stExpander"] summary {{
+            background-color: #ffffff !important;
+            color: #222222 !important;
+        }}
+
+        div[data-testid="stCaptionContainer"],
+        div[data-testid="stCaptionContainer"] p {{
+            color: #626262 !important;
         }}
 
         .stButton > button {{
