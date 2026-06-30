@@ -120,6 +120,27 @@ st.markdown(
         .stApp li,
         .stApp label {{
             color: {THEME["text"]} !important;
+            font-size: 1.08rem !important;
+            line-height: 1.58 !important;
+        }}
+
+        /* Main page headings */
+        h1 {{
+            font-size: 2.35rem !important;
+            line-height: 1.18 !important;
+            font-weight: 700 !important;
+        }}
+
+        h2 {{
+            font-size: 1.85rem !important;
+            line-height: 1.25 !important;
+            font-weight: 700 !important;
+        }}
+
+        h3 {{
+            font-size: 1.42rem !important;
+            line-height: 1.3 !important;
+            font-weight: 700 !important;
         }}
 
         .alba-card {{
@@ -141,6 +162,8 @@ st.markdown(
         .alba-card span,
         .alba-card div {{
             color: {THEME["text"]} !important;
+            font-size: 1.20rem !important;
+            line-height: 1.64 !important;
         }}
 
         .education-card {{
@@ -159,6 +182,8 @@ st.markdown(
         .education-card span,
         .education-card div {{
             color: {THEME["text"]} !important;
+            font-size: 1.10rem !important;
+            line-height: 1.60 !important;
         }}
 
         .education-card h3 {{
@@ -177,6 +202,13 @@ st.markdown(
         div[data-testid="stSelectbox"] label,
         div[data-testid="stSelectbox"] label p {{
             color: {THEME["text"]} !important;
+            font-size: 1.07rem !important;
+            line-height: 1.48 !important;
+        }}
+
+        div[data-testid="stTextArea"] label p,
+        div[data-testid="stSelectbox"] label p {{
+            font-weight: 650 !important;
         }}
 
         textarea,
@@ -209,19 +241,37 @@ st.markdown(
         }}
 
         .stButton > button {{
-            border-radius: 12px;
-            border: 0;
-            background: linear-gradient(135deg, {ALBA_COLORS["purple"]}, {ALBA_COLORS["blue"]});
-            color: white !important;
-            font-weight: 650;
-            min-height: 2.9rem;
-            box-shadow: 0 5px 14px rgba(39, 166, 222, 0.22);
+            border-radius: 12px !important;
+            border: 2px solid {"#ffffff" if IS_DARK else ALBA_COLORS["purple"]} !important;
+            background: {ALBA_COLORS["blue"] if IS_DARK else ALBA_COLORS["purple"]} !important;
+            color: #ffffff !important;
+            font-weight: 750 !important;
+            font-size: 1.05rem !important;
+            line-height: 1.25 !important;
+            min-height: 3.15rem !important;
+            padding: 0.62rem 1.05rem !important;
+            box-shadow: 0 6px 16px rgba(39, 166, 222, 0.30) !important;
+        }}
+
+        .stButton > button p,
+        .stButton > button span,
+        .stButton > button div {{
+            color: #ffffff !important;
+            font-weight: 750 !important;
+            font-size: 1.05rem !important;
         }}
 
         .stButton > button:hover {{
-            background: linear-gradient(135deg, {ALBA_COLORS["blue"]}, {ALBA_COLORS["pink"]});
-            color: white !important;
+            background: {ALBA_COLORS["pink"] if IS_DARK else ALBA_COLORS["blue"]} !important;
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+            box-shadow: 0 8px 20px rgba(202, 73, 143, 0.34) !important;
             transform: translateY(-1px);
+        }}
+
+        .stButton > button:focus {{
+            outline: 3px solid {ALBA_COLORS["yellow"]} !important;
+            outline-offset: 2px !important;
         }}
 
         div[data-testid="stMetric"] {{
@@ -248,6 +298,48 @@ st.markdown(
         hr {{
             border-color: {THEME["border"]} !important;
         }}
+
+        @media (max-width: 768px) {{
+            h1 {{
+                font-size: 1.90rem !important;
+            }}
+
+            h2 {{
+                font-size: 1.55rem !important;
+            }}
+
+            h3 {{
+                font-size: 1.30rem !important;
+            }}
+
+            .stApp p,
+            .stApp li,
+            .stApp label {{
+                font-size: 1.00rem !important;
+                line-height: 1.52 !important;
+            }}
+
+            .alba-card,
+            .alba-card p,
+            .alba-card div {{
+                font-size: 1.08rem !important;
+                line-height: 1.58 !important;
+            }}
+
+            .education-card,
+            .education-card p,
+            .education-card div {{
+                font-size: 1.02rem !important;
+                line-height: 1.55 !important;
+            }}
+
+            .stButton > button,
+            .stButton > button p,
+            .stButton > button span {{
+                font-size: 0.98rem !important;
+            }}
+        }}
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -1399,8 +1491,40 @@ def render_analytics():
         "Groups with fewer than five participants are suppressed."
     )
 
-    with st.expander("Organiser export"):
+    with st.expander("Organiser export and data-file information"):
+        st.markdown(
+            f"""
+            **Current runtime data file:** `{DATA_FILE.name}`
+
+            The deployed app creates this CSV inside Streamlit Community Cloud's
+            temporary runtime environment. It is not automatically added to GitHub
+            or downloaded to your computer. Use the organiser download buttons below
+            to obtain a local copy.
+
+            **Important:** runtime files can be lost when the cloud app is rebuilt,
+            rebooted or moved to a new environment. Persistent external storage is
+            recommended before the live event.
+            """
+        )
+
         organiser_password = get_organiser_password()
+
+        file_exists = DATA_FILE.exists()
+        file_size_kb = (
+            DATA_FILE.stat().st_size / 1024
+            if file_exists
+            else 0
+        )
+
+        status_col1, status_col2 = st.columns(2)
+        status_col1.metric(
+            "Runtime CSV status",
+            "Available" if file_exists else "Not created yet",
+        )
+        status_col2.metric(
+            "Runtime CSV size",
+            f"{file_size_kb:.1f} KB",
+        )
 
         if not organiser_password:
             st.info(
