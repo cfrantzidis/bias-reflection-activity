@@ -120,27 +120,29 @@ st.markdown(
         .stApp li,
         .stApp label {{
             color: {THEME["text"]} !important;
-            font-size: 1.08rem !important;
-            line-height: 1.58 !important;
+            font-size: 1.14rem !important;
+            line-height: 1.62 !important;
         }}
 
         /* Main page headings */
         h1 {{
-            font-size: 2.35rem !important;
-            line-height: 1.18 !important;
-            font-weight: 700 !important;
+            font-size: 2.55rem !important;
+            line-height: 1.16 !important;
+            font-weight: 760 !important;
+            letter-spacing: -0.02em;
         }}
 
         h2 {{
-            font-size: 1.85rem !important;
-            line-height: 1.25 !important;
-            font-weight: 700 !important;
+            font-size: 2.00rem !important;
+            line-height: 1.22 !important;
+            font-weight: 740 !important;
+            letter-spacing: -0.01em;
         }}
 
         h3 {{
-            font-size: 1.42rem !important;
-            line-height: 1.3 !important;
-            font-weight: 700 !important;
+            font-size: 1.55rem !important;
+            line-height: 1.28 !important;
+            font-weight: 730 !important;
         }}
 
         .alba-card {{
@@ -162,8 +164,8 @@ st.markdown(
         .alba-card span,
         .alba-card div {{
             color: {THEME["text"]} !important;
-            font-size: 1.20rem !important;
-            line-height: 1.64 !important;
+            font-size: 1.28rem !important;
+            line-height: 1.68 !important;
         }}
 
         .education-card {{
@@ -182,8 +184,8 @@ st.markdown(
         .education-card span,
         .education-card div {{
             color: {THEME["text"]} !important;
-            font-size: 1.10rem !important;
-            line-height: 1.60 !important;
+            font-size: 1.16rem !important;
+            line-height: 1.62 !important;
         }}
 
         .education-card h3 {{
@@ -202,13 +204,13 @@ st.markdown(
         div[data-testid="stSelectbox"] label,
         div[data-testid="stSelectbox"] label p {{
             color: {THEME["text"]} !important;
-            font-size: 1.07rem !important;
-            line-height: 1.48 !important;
+            font-size: 1.12rem !important;
+            line-height: 1.52 !important;
         }}
 
         div[data-testid="stTextArea"] label p,
         div[data-testid="stSelectbox"] label p {{
-            font-weight: 650 !important;
+            font-weight: 700 !important;
         }}
 
         textarea,
@@ -241,31 +243,32 @@ st.markdown(
         }}
 
         .stButton > button {{
-            border-radius: 12px !important;
-            border: 2px solid {"#ffffff" if IS_DARK else ALBA_COLORS["purple"]} !important;
-            background: {ALBA_COLORS["blue"] if IS_DARK else ALBA_COLORS["purple"]} !important;
+            border-radius: 14px !important;
+            border: 2px solid {"#ffffff" if IS_DARK else "#201b63"} !important;
+            background: {"#0f8dd1" if IS_DARK else "#201b63"} !important;
             color: #ffffff !important;
-            font-weight: 750 !important;
-            font-size: 1.05rem !important;
-            line-height: 1.25 !important;
-            min-height: 3.15rem !important;
-            padding: 0.62rem 1.05rem !important;
-            box-shadow: 0 6px 16px rgba(39, 166, 222, 0.30) !important;
+            font-weight: 780 !important;
+            font-size: 1.12rem !important;
+            line-height: 1.20 !important;
+            min-height: 3.28rem !important;
+            padding: 0.68rem 1.10rem !important;
+            box-shadow: 0 8px 18px rgba(32, 27, 99, 0.34) !important;
+            letter-spacing: 0.01em;
         }}
 
         .stButton > button p,
         .stButton > button span,
         .stButton > button div {{
             color: #ffffff !important;
-            font-weight: 750 !important;
-            font-size: 1.05rem !important;
+            font-weight: 780 !important;
+            font-size: 1.10rem !important;
         }}
 
         .stButton > button:hover {{
-            background: {ALBA_COLORS["pink"] if IS_DARK else ALBA_COLORS["blue"]} !important;
-            border-color: #ffffff !important;
+            background: {"#27a6de" if IS_DARK else "#3229a1"} !important;
+            border-color: {ALBA_COLORS["yellow"]} !important;
             color: #ffffff !important;
-            box-shadow: 0 8px 20px rgba(202, 73, 143, 0.34) !important;
+            box-shadow: 0 10px 24px rgba(39, 166, 222, 0.36) !important;
             transform: translateY(-1px);
         }}
 
@@ -275,13 +278,13 @@ st.markdown(
         }}
 
         div[data-testid="stMetric"] {{
-            background: {THEME["card_bg"]};
+            background: linear-gradient(180deg, {THEME["card_bg"]} 0%, {"#262b3a" if IS_DARK else "#ffffff"} 100%);
             color: {THEME["text"]};
-            border-radius: 16px;
-            padding: 0.9rem;
+            border-radius: 18px;
+            padding: 1.0rem;
             border: 1px solid {THEME["border"]};
-            border-top: 5px solid {ALBA_COLORS["pink"]};
-            box-shadow: 0 7px 20px {THEME["shadow"]};
+            border-top: 6px solid {ALBA_COLORS["pink"]};
+            box-shadow: 0 10px 22px {THEME["shadow"]};
         }}
 
         div[data-testid="stMetric"] label,
@@ -295,48 +298,77 @@ st.markdown(
             overflow: hidden;
         }}
 
+        button[data-baseweb="tab"] {{
+            background: {"#232838" if IS_DARK else "#edf0fa"} !important;
+            border: 1px solid {THEME["border"]} !important;
+            border-radius: 12px !important;
+            margin-right: 0.35rem !important;
+            padding: 0.55rem 0.95rem !important;
+        }}
+
+        button[data-baseweb="tab"] > div p {{
+            color: {THEME["text"]} !important;
+            font-size: 1.02rem !important;
+            font-weight: 700 !important;
+        }}
+
+        button[data-baseweb="tab"][aria-selected="true"] {{
+            background: {"#0f8dd1" if IS_DARK else "#201b63"} !important;
+            border-color: {ALBA_COLORS["yellow"]} !important;
+            box-shadow: 0 6px 14px rgba(39, 166, 222, 0.20) !important;
+        }}
+
+        button[data-baseweb="tab"][aria-selected="true"] > div p {{
+            color: #ffffff !important;
+        }}
+
+        div[data-baseweb="select"] > div {{
+            border-radius: 12px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+        }}
+
         hr {{
             border-color: {THEME["border"]} !important;
         }}
 
         @media (max-width: 768px) {{
             h1 {{
-                font-size: 1.90rem !important;
+                font-size: 2.00rem !important;
             }}
 
             h2 {{
-                font-size: 1.55rem !important;
+                font-size: 1.65rem !important;
             }}
 
             h3 {{
-                font-size: 1.30rem !important;
+                font-size: 1.36rem !important;
             }}
 
             .stApp p,
             .stApp li,
             .stApp label {{
-                font-size: 1.00rem !important;
-                line-height: 1.52 !important;
+                font-size: 1.04rem !important;
+                line-height: 1.56 !important;
             }}
 
             .alba-card,
             .alba-card p,
             .alba-card div {{
-                font-size: 1.08rem !important;
-                line-height: 1.58 !important;
+                font-size: 1.14rem !important;
+                line-height: 1.62 !important;
             }}
 
             .education-card,
             .education-card p,
             .education-card div {{
-                font-size: 1.02rem !important;
-                line-height: 1.55 !important;
+                font-size: 1.06rem !important;
+                line-height: 1.58 !important;
             }}
 
             .stButton > button,
             .stButton > button p,
             .stButton > button span {{
-                font-size: 0.98rem !important;
+                font-size: 1.00rem !important;
             }}
         }}
 
@@ -875,6 +907,46 @@ def get_organiser_password():
 
 
 
+def style_plotly_figure(fig, title: str | None = None):
+    """Apply a consistent polished visual theme to Plotly figures."""
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color=THEME["text"], size=16, family="Asap, Arial, sans-serif"),
+        title=dict(
+            text=title if title else fig.layout.title.text,
+            font=dict(size=22, color=THEME["text"]),
+            x=0.02,
+            xanchor="left",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0.0,
+            font=dict(size=13, color=THEME["text"]),
+            title=dict(font=dict(size=13, color=THEME["text"])),
+        ),
+        margin=dict(l=10, r=10, t=60, b=20),
+    )
+    fig.update_xaxes(
+        title_font=dict(size=16, color=THEME["text"]),
+        tickfont=dict(size=13, color=THEME["text"]),
+        showgrid=True,
+        gridcolor="rgba(128,128,128,0.15)",
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        title_font=dict(size=16, color=THEME["text"]),
+        tickfont=dict(size=13, color=THEME["text"]),
+        showgrid=True,
+        gridcolor="rgba(128,128,128,0.15)",
+        zeroline=False,
+    )
+    return fig
+
+
 def classify_sentiment(compound_score: float):
     if compound_score >= 0.05:
         return "Positive"
@@ -1115,6 +1187,7 @@ def render_analytics():
                 plot_bgcolor="rgba(0,0,0,0)",
                 font_color=THEME["text"],
             )
+            fig_hist = style_plotly_figure(fig_hist)
             st.plotly_chart(fig_hist, use_container_width=True)
 
         with right:
@@ -1149,6 +1222,7 @@ def render_analytics():
                 font_color=THEME["text"],
                 legend_title_text="",
             )
+            fig_donut = style_plotly_figure(fig_donut)
             st.plotly_chart(fig_donut, use_container_width=True)
 
         st.markdown("#### Participant score timeline")
@@ -1177,6 +1251,7 @@ def render_analytics():
             plot_bgcolor="rgba(0,0,0,0)",
             font_color=THEME["text"],
         )
+        fig_timeline = style_plotly_figure(fig_timeline)
         st.plotly_chart(fig_timeline, use_container_width=True)
 
     with scenario_tab:
@@ -1215,6 +1290,7 @@ def render_analytics():
             plot_bgcolor="rgba(0,0,0,0)",
             font_color=THEME["text"],
         )
+        fig_scenario = style_plotly_figure(fig_scenario)
         st.plotly_chart(fig_scenario, use_container_width=True)
 
         option_distribution = (
@@ -1253,6 +1329,7 @@ def render_analytics():
             plot_bgcolor="rgba(0,0,0,0)",
             font_color=THEME["text"],
         )
+        fig_stack = style_plotly_figure(fig_stack)
         st.plotly_chart(fig_stack, use_container_width=True)
 
         radar_values = scenario_means["Mean bias score"].tolist()
@@ -1286,6 +1363,7 @@ def render_analytics():
                 showlegend=False,
                 margin=dict(l=40, r=40, t=60, b=40),
             )
+            fig_radar = style_plotly_figure(fig_radar)
             st.plotly_chart(fig_radar, use_container_width=True)
 
     with demographic_tab:
@@ -1354,6 +1432,7 @@ def render_analytics():
                 plot_bgcolor="rgba(0,0,0,0)",
                 font_color=THEME["text"],
             )
+            fig_box = style_plotly_figure(fig_box)
             st.plotly_chart(fig_box, use_container_width=True)
 
             group_summary = (
@@ -1434,6 +1513,7 @@ def render_analytics():
                     paper_bgcolor="rgba(0,0,0,0)",
                     font_color=THEME["text"],
                 )
+                fig_sentiment = style_plotly_figure(fig_sentiment)
                 st.plotly_chart(fig_sentiment, use_container_width=True)
 
             with text_col2:
@@ -1454,6 +1534,7 @@ def render_analytics():
                     plot_bgcolor="rgba(0,0,0,0)",
                     font_color=THEME["text"],
                 )
+                fig_compound = style_plotly_figure(fig_compound)
                 st.plotly_chart(fig_compound, use_container_width=True)
 
             sentiment_scenario = (
@@ -1484,6 +1565,7 @@ def render_analytics():
                 plot_bgcolor="rgba(0,0,0,0)",
                 font_color=THEME["text"],
             )
+            fig_sentiment_scenario = style_plotly_figure(fig_sentiment_scenario)
             st.plotly_chart(fig_sentiment_scenario, use_container_width=True)
 
     st.caption(
@@ -1831,6 +1913,7 @@ def render_summary():
         margin=dict(l=10, r=10, t=25, b=10),
     )
     fig.update_traces(textposition="outside")
+    fig = style_plotly_figure(fig)
     st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("Review my six responses and bias scores"):
@@ -1840,6 +1923,7 @@ def render_summary():
 
     if not historical_df.empty and "total_score" in historical_df.columns:
         st.markdown("### Compare with other respondents")
+        st.caption("This comparison is displayed with enhanced chart styling and privacy thresholds for small subgroups.")
 
         comparison_dimension_map = {
             "All respondents": None,
@@ -1911,6 +1995,7 @@ def render_summary():
                 showlegend=False,
                 margin=dict(l=10, r=10, t=25, b=10),
             )
+            comparison_fig = style_plotly_figure(comparison_fig)
             st.plotly_chart(comparison_fig, use_container_width=True)
 
     st.info(
