@@ -6,8 +6,11 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import pycountry
 import streamlit as st
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from wordcloud import STOPWORDS, WordCloud
 
 
 # ============================================================
@@ -21,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-DATA_FILE = Path("responses_app4.csv")
+DATA_FILE = Path("responses_bias_score_v2.csv")
 IMAGE_DIR = Path("images")
 
 ALBA_COLORS = {
@@ -71,6 +74,24 @@ AGE_GROUPS = [
 ALBA_OPTIONS = ["Yes", "No", "Unsure"]
 
 
+# Appearance preference
+if "appearance_mode" not in st.session_state:
+    st.session_state.appearance_mode = "Standard"
+
+IS_DARK = st.session_state.appearance_mode == "Dark"
+
+THEME = {
+    "page_bg": "#11131a" if IS_DARK else "#f6f7fb",
+    "page_bg_2": "#191c26" if IS_DARK else "#ffffff",
+    "card_bg": "#202431" if IS_DARK else "#ffffff",
+    "field_bg": "#2a2f3d" if IS_DARK else "#ffffff",
+    "text": "#f4f5f7" if IS_DARK else "#222222",
+    "muted": "#c7cad1" if IS_DARK else "#626262",
+    "border": "#41475a" if IS_DARK else "#dde1ec",
+    "shadow": "rgba(0, 0, 0, 0.35)" if IS_DARK else "rgba(62, 61, 129, 0.10)",
+}
+
+
 # ============================================================
 # Styling
 # ============================================================
@@ -85,27 +106,32 @@ st.markdown(
         }}
 
         .stApp {{
-            background: linear-gradient(180deg, #ffffff 0%, {ALBA_COLORS["light"]} 100%);
-            color: #222222 !important;
+            background:
+                radial-gradient(circle at top right, rgba(39,166,222,0.13), transparent 28%),
+                linear-gradient(180deg, {THEME["page_bg_2"]} 0%, {THEME["page_bg"]} 100%);
+            color: {THEME["text"]} !important;
         }}
 
         h1, h2, h3 {{
-            color: {ALBA_COLORS["purple"]} !important;
+            color: {ALBA_COLORS["blue"] if IS_DARK else ALBA_COLORS["purple"]} !important;
         }}
 
         .stApp p,
         .stApp li,
         .stApp label {{
-            color: #222222;
+            color: {THEME["text"]} !important;
         }}
 
         .alba-card {{
-            background: #ffffff !important;
-            color: #222222 !important;
-            padding: 1.25rem 1.35rem;
-            border-radius: 16px;
-            border-left: 6px solid {ALBA_COLORS["blue"]};
-            box-shadow: 0 5px 18px rgba(62, 61, 129, 0.10);
+            background: {THEME["card_bg"]} !important;
+            color: {THEME["text"]} !important;
+            padding: 1.3rem 1.4rem;
+            border-radius: 18px;
+            border-left: 7px solid {ALBA_COLORS["blue"]};
+            border-top: 1px solid {THEME["border"]};
+            border-right: 1px solid {THEME["border"]};
+            border-bottom: 1px solid {THEME["border"]};
+            box-shadow: 0 8px 24px {THEME["shadow"]};
             margin-bottom: 1rem;
         }}
 
@@ -114,15 +140,16 @@ st.markdown(
         .alba-card strong,
         .alba-card span,
         .alba-card div {{
-            color: #222222 !important;
+            color: {THEME["text"]} !important;
         }}
 
         .education-card {{
-            background: #ffffff !important;
-            color: #222222 !important;
-            padding: 1.2rem 1.35rem;
-            border-radius: 16px;
+            background: {THEME["card_bg"]} !important;
+            color: {THEME["text"]} !important;
+            padding: 1.25rem 1.4rem;
+            border-radius: 18px;
             border: 2px solid {ALBA_COLORS["green"]};
+            box-shadow: 0 8px 24px {THEME["shadow"]};
             margin-top: 1rem;
         }}
 
@@ -131,15 +158,15 @@ st.markdown(
         .education-card strong,
         .education-card span,
         .education-card div {{
-            color: #222222 !important;
+            color: {THEME["text"]} !important;
         }}
 
         .education-card h3 {{
-            color: {ALBA_COLORS["purple"]} !important;
+            color: {ALBA_COLORS["blue"] if IS_DARK else ALBA_COLORS["purple"]} !important;
         }}
 
         .small-muted {{
-            color: #626262 !important;
+            color: {THEME["muted"]} !important;
             font-size: 0.92rem;
         }}
 
@@ -149,56 +176,77 @@ st.markdown(
         div[data-testid="stTextArea"] label p,
         div[data-testid="stSelectbox"] label,
         div[data-testid="stSelectbox"] label p {{
-            color: #222222 !important;
+            color: {THEME["text"]} !important;
         }}
 
         textarea,
         input {{
-            background-color: #ffffff !important;
-            color: #222222 !important;
-            -webkit-text-fill-color: #222222 !important;
+            background-color: {THEME["field_bg"]} !important;
+            color: {THEME["text"]} !important;
+            -webkit-text-fill-color: {THEME["text"]} !important;
         }}
 
         div[data-baseweb="select"] > div {{
-            background-color: #ffffff !important;
-            color: #222222 !important;
+            background-color: {THEME["field_bg"]} !important;
+            color: {THEME["text"]} !important;
+            border-color: {THEME["border"]} !important;
         }}
 
         div[data-baseweb="select"] span {{
-            color: #222222 !important;
+            color: {THEME["text"]} !important;
         }}
 
         div[data-testid="stExpander"] details,
         div[data-testid="stExpander"] summary {{
-            background-color: #ffffff !important;
-            color: #222222 !important;
+            background-color: {THEME["card_bg"]} !important;
+            color: {THEME["text"]} !important;
+            border-color: {THEME["border"]} !important;
         }}
 
         div[data-testid="stCaptionContainer"],
         div[data-testid="stCaptionContainer"] p {{
-            color: #626262 !important;
+            color: {THEME["muted"]} !important;
         }}
 
         .stButton > button {{
-            border-radius: 10px;
+            border-radius: 12px;
             border: 0;
-            background: {ALBA_COLORS["purple"]};
-            color: white;
-            font-weight: 600;
-            min-height: 2.8rem;
+            background: linear-gradient(135deg, {ALBA_COLORS["purple"]}, {ALBA_COLORS["blue"]});
+            color: white !important;
+            font-weight: 650;
+            min-height: 2.9rem;
+            box-shadow: 0 5px 14px rgba(39, 166, 222, 0.22);
         }}
 
         .stButton > button:hover {{
-            background: {ALBA_COLORS["blue"]};
-            color: white;
+            background: linear-gradient(135deg, {ALBA_COLORS["blue"]}, {ALBA_COLORS["pink"]});
+            color: white !important;
+            transform: translateY(-1px);
         }}
 
         div[data-testid="stMetric"] {{
-            background: white;
-            border-radius: 14px;
-            padding: 0.8rem;
+            background: {THEME["card_bg"]};
+            color: {THEME["text"]};
+            border-radius: 16px;
+            padding: 0.9rem;
+            border: 1px solid {THEME["border"]};
             border-top: 5px solid {ALBA_COLORS["pink"]};
-            box-shadow: 0 4px 14px rgba(62, 61, 129, 0.08);
+            box-shadow: 0 7px 20px {THEME["shadow"]};
+        }}
+
+        div[data-testid="stMetric"] label,
+        div[data-testid="stMetric"] div {{
+            color: {THEME["text"]} !important;
+        }}
+
+        div[data-testid="stDataFrame"] {{
+            border: 1px solid {THEME["border"]};
+            border-radius: 12px;
+            overflow: hidden;
+        }}
+
+        hr {{
+            border-color: {THEME["border"]} !important;
         }}
     </style>
     """,
@@ -225,26 +273,37 @@ SCENARIOS = [
         "options": {
             "A": {
                 "text": "It probably reflects what the role genuinely requires.",
-                "orientation": "Minimising / blind-spot",
-                "detail": "Potentially unrecognised bias",
+                "score": 2,
+                "rationale": (
+                    "Takes the gendered framing at face value, with no awareness that "
+                    "it may be coded language."
+                ),
             },
             "B": {
-                "text": "It could subtly steer the team toward certain candidates without anyone realising.",
-                "orientation": "Bias-aware",
-                "detail": "Recognition of gendered assumptions",
+                "text": (
+                    "It could subtly steer the team toward certain candidates without "
+                    "anyone realising."
+                ),
+                "score": 0,
+                "rationale": (
+                    "Recognises the mechanism: implicit assumptions may influence judgement."
+                ),
             },
             "C": {
                 "text": "It is too vague to have any real influence on decisions.",
-                "orientation": "Minimising / blind-spot",
-                "detail": "Bias minimisation",
+                "score": 1,
+                "rationale": (
+                    "Acknowledges ambiguity but dismisses the risk rather than examining it."
+                ),
             },
         },
         "explanation": (
             'The comment about someone "people feel comfortable opening up to" sounds neutral, '
             "but it subtly invokes traits more commonly associated with women—warmth, emotional "
             "availability and nurturance. Without anyone explicitly saying so, this language can "
-            "steer evaluators toward candidates who fit a gendered image of care. The bias is not "
-            "necessarily in the words themselves, but in the assumptions they may activate."
+            "steer evaluators toward candidates who fit a gendered image of care, while equally "
+            "qualified candidates who do not match that image may be passed over. The bias is "
+            "not necessarily in the words themselves, but in the assumptions they may activate."
         ),
     },
     {
@@ -260,26 +319,38 @@ SCENARIOS = [
         ),
         "options": {
             "A": {
-                "text": "You read both but find yourself spending more time on the one that fits your framework.",
-                "orientation": "Bias-leaning",
-                "detail": "Confirmation bias",
+                "text": (
+                    "You read both but find yourself spending more time on the one that "
+                    "fits your framework."
+                ),
+                "score": 1,
+                "rationale": "The bias is operating passively or unconsciously.",
             },
             "B": {
-                "text": "You flag both preprints at the next lab meeting and discuss them equally.",
-                "orientation": "Reflective / balanced",
-                "detail": "Balanced scientific reasoning",
+                "text": (
+                    "You flag both preprints at the next lab meeting and discuss them equally."
+                ),
+                "score": 0,
+                "rationale": (
+                    "Uses an active countermeasure and applies structural fairness to the evidence."
+                ),
             },
             "C": {
-                "text": "You set aside the contradicting preprint until after your upcoming grant submission.",
-                "orientation": "Bias-leaning",
-                "detail": "Confirmation bias",
+                "text": (
+                    "You set aside the contradicting preprint until after your upcoming "
+                    "grant submission."
+                ),
+                "score": 2,
+                "rationale": (
+                    "Deliberately avoids contradictory evidence for strategic convenience."
+                ),
             },
         },
         "explanation": (
             "We tend to engage more critically with evidence that challenges us and more "
             "generously with evidence that confirms what we already believe. In research, "
-            "this can appear as spending less time on contradictory evidence, reading it more "
-            'sceptically, or filing it away for "later".'
+            "this can appear as spending less time on contradictory evidence, reading it "
+            'more sceptically, or filing it away for "later".'
         ),
     },
     {
@@ -295,26 +366,43 @@ SCENARIOS = [
         ),
         "options": {
             "A": {
-                "text": "He talks about the months of troubleshooting, failed iterations and cross-team input that got them there.",
-                "orientation": "Context-aware",
-                "detail": "Context-aware reasoning",
+                "text": (
+                    "He talks about the months of troubleshooting, failed iterations and "
+                    "cross-team input that got them there."
+                ),
+                "score": 0,
+                "rationale": (
+                    "Actively corrects the bias by attributing success to visible work, "
+                    "collaboration and context."
+                ),
             },
             "B": {
-                "text": "He says it came together because Dr. E has a kind of intuition that is hard to teach.",
-                "orientation": "Bias-leaning",
-                "detail": "Attribution bias",
+                "text": (
+                    "He says it came together because Dr. E has a kind of intuition "
+                    "that is hard to teach."
+                ),
+                "score": 2,
+                "rationale": (
+                    "Classic attribution bias: success is explained mainly through an innate trait."
+                ),
             },
             "C": {
-                "text": "He lets Dr. E present the work and steps back from the narrative entirely.",
-                "orientation": "Protective / corrective",
-                "detail": "Corrective attribution practice",
+                "text": (
+                    "He lets Dr. E present the work and steps back from the narrative entirely."
+                ),
+                "score": 1,
+                "rationale": (
+                    "Avoids imposing a biased narrative, but does so passively rather than "
+                    "actively reframing the explanation."
+                ),
             },
         },
         "explanation": (
             "When we already hold a positive image of someone, we may explain their success "
             "mainly in terms of who they are—their talent, instinct or character. This can "
             "flatten the fuller story of collaboration, failed attempts and structural support. "
-            "The reverse can also occur when other people's success is attributed to luck or circumstance."
+            "The reverse can also occur when other people's success is attributed to luck "
+            "or circumstance."
         ),
     },
     {
@@ -331,18 +419,29 @@ SCENARIOS = [
         "options": {
             "A": {
                 "text": "It sharpens his focus—he is determined to prove it wrong.",
-                "orientation": "Mixed / context-sensitive",
-                "detail": "Performance pressure response",
+                "score": 1,
+                "rationale": (
+                    "Acknowledges an effect, but frames it as fully overcome by willpower "
+                    "rather than recognising a genuine cognitive cost."
+                ),
             },
             "B": {
-                "text": "It stays with him, and he finds it harder to settle into his delivery.",
-                "orientation": "Bias-aware",
-                "detail": "Recognition of stereotype threat",
+                "text": (
+                    "It stays with him, and he finds it harder to settle into his delivery."
+                ),
+                "score": 0,
+                "rationale": (
+                    "Matches the documented mechanism: stereotype threat can consume "
+                    "cognitive bandwidth and disrupt performance."
+                ),
             },
             "C": {
                 "text": "He brushes it off and presents exactly as he prepared.",
-                "orientation": "Minimising / blind-spot",
-                "detail": "Bias minimisation",
+                "score": 2,
+                "rationale": (
+                    "Understates the potential impact of stereotype threat by assuming "
+                    "the remark has no real effect."
+                ),
             },
         },
         "explanation": (
@@ -366,26 +465,38 @@ SCENARIOS = [
         ),
         "options": {
             "A": {
-                "text": "You find yourself reading Dr. X's application with more anticipation.",
-                "orientation": "Bias-leaning",
-                "detail": "Prestige bias",
+                "text": (
+                    "You find yourself reading Dr. X's application with more anticipation."
+                ),
+                "score": 2,
+                "rationale": "Institutional prestige is directly shaping enthusiasm.",
             },
             "B": {
-                "text": "You are curious about the constraints Dr. Y worked under and what that required of them.",
-                "orientation": "Context-aware",
-                "detail": "Context-aware reasoning",
+                "text": (
+                    "You are curious about the constraints Dr. Y worked under and what "
+                    "that required of them."
+                ),
+                "score": 0,
+                "rationale": (
+                    "Actively reframes context as something to investigate rather than penalise."
+                ),
             },
             "C": {
-                "text": "You treat both files the same—institutional context does not factor in.",
-                "orientation": "Reflective / balanced",
-                "detail": "Procedural neutrality",
+                "text": (
+                    "You treat both files the same—institutional context does not factor in."
+                ),
+                "score": 1,
+                "rationale": (
+                    "Claims neutrality without examining how prestige may already shape judgement."
+                ),
             },
         },
         "explanation": (
             "Prestige bias uses institutional reputation as a shortcut for individual quality. "
             "It can conflate the visibility and resources of an institution with the ability "
             "of the person. Researchers working in smaller or under-resourced settings may "
-            "have developed substantial skill and independence that a conventional CV comparison misses."
+            "have developed substantial skill and independence that a conventional CV "
+            "comparison misses."
         ),
     },
     {
@@ -401,19 +512,30 @@ SCENARIOS = [
         ),
         "options": {
             "A": {
-                "text": "You notice you are more invested in her application than the others.",
-                "orientation": "Bias-leaning",
-                "detail": "Affinity bias",
+                "text": (
+                    "You notice you are more invested in her application than the others."
+                ),
+                "score": 2,
+                "rationale": "The affinity bias is operating directly and remains unexamined.",
             },
             "B": {
                 "text": "You treat it as one data point among many and move on.",
-                "orientation": "Reflective / balanced",
-                "detail": "Structured evaluation",
+                "score": 0,
+                "rationale": (
+                    "Recognises the pull and deliberately normalises its weight within "
+                    "the wider evaluation."
+                ),
             },
             "C": {
-                "text": "You flag it to the panel as a potential conflict and recuse yourself from her evaluation.",
-                "orientation": "Protective / corrective",
-                "detail": "Conflict-management response",
+                "text": (
+                    "You flag it to the panel as a potential conflict and recuse yourself "
+                    "from her evaluation."
+                ),
+                "score": 1,
+                "rationale": (
+                    "Shows awareness but overcorrects by treating ordinary scholarly "
+                    "engagement as disqualifying."
+                ),
             },
         },
         "explanation": (
@@ -424,7 +546,6 @@ SCENARIOS = [
         ),
     },
 ]
-
 
 # ============================================================
 # Session state
@@ -520,6 +641,30 @@ def image_if_available(
     )
 
 
+def interpret_score(total_score: int):
+    """Return the non-diagnostic bias-score band and interpretation."""
+    if total_score <= 4:
+        return (
+            "Lower bias score",
+            "Across these scenarios, your responses more often recognised or "
+            "countered the bias mechanisms. This does not imply that a person is "
+            "bias-free; it reflects only the choices made in this activity.",
+        )
+    if total_score <= 8:
+        return (
+            "Moderate bias score",
+            "Your responses show a mixed pattern. Some biases were recognised, while "
+            "others may have been minimised, left unexamined, or addressed through "
+            "an incomplete or disproportionate response.",
+        )
+    return (
+        "Higher bias score",
+        "Across these scenarios, bias-related patterns were more often accepted, "
+        "minimised or left unexamined. This result is a prompt for reflection, not "
+        "a diagnosis or fixed description of an individual.",
+    )
+
+
 def save_submission():
     if st.session_state.submission_saved:
         return
@@ -527,6 +672,15 @@ def save_submission():
     participant_id = str(uuid.uuid4())
     timestamp = datetime.now().isoformat(timespec="seconds")
     st.session_state.participant_id = participant_id
+
+    selected_scores = []
+    for scenario in SCENARIOS:
+        response = st.session_state.responses[scenario["id"]]
+        option = scenario["options"][response["selected_option"]]
+        selected_scores.append(option["score"])
+
+    total_score = sum(selected_scores)
+    score_level, score_interpretation = interpret_score(total_score)
 
     rows = []
     demographics = st.session_state.demographics
@@ -550,8 +704,11 @@ def save_submission():
                 "bias_family": scenario["bias_family"],
                 "selected_option": response["selected_option"],
                 "selected_text": option["text"],
-                "reasoning_orientation": option["orientation"],
-                "detailed_label": option["detail"],
+                "option_score": option["score"],
+                "score_rationale": option["rationale"],
+                "total_score": total_score,
+                "score_level": score_level,
+                "score_interpretation": score_interpretation,
                 "free_text_response": response.get("free_text_response", ""),
             }
         )
@@ -585,30 +742,35 @@ def participant_summary_dataframe():
         rows.append(
             {
                 "Scenario": scenario["neutral_title"],
+                "Bias theme": scenario["bias_family"],
                 "Selected option": response["selected_option"],
-                "Reasoning category": option["orientation"],
-                "Detailed label": option["detail"],
+                "Points": option["score"],
+                "Why it received this score": option["rationale"],
             }
         )
     return pd.DataFrame(rows)
 
 
 def render_how_it_works():
-    with st.expander("How this works", expanded=False):
+    with st.expander("How the bias score works", expanded=False):
         st.markdown(
             """
-            Each answer option is manually pre-tagged with two non-diagnostic descriptors:
+            Each answer is assigned a **bias score**:
 
-            **1. A broad reasoning orientation**, such as *Bias-leaning*, 
-            *Reflective / balanced*, *Context-aware*, *Bias-aware*, 
-            *Protective / corrective* or *Minimising / blind-spot*.
+            - **0 points:** the response actively recognises and proportionately counters the bias;
+            - **1 point:** partial awareness, an incomplete response, or an overcorrection;
+            - **2 points:** the bias is operating, accepted, minimised or largely unrecognised.
 
-            **2. A more specific descriptive label**, such as *Confirmation bias*,
-            *Structured evaluation* or *Context-aware reasoning*.
+            The six scores are added together, giving a total from **0 to 12**.
+            A larger score indicates that more bias-related responses appeared in
+            this set of scenarios:
 
-            The Reflection Summary is a simple frequency count of the broad reasoning
-            orientations selected across the six scenarios. It is not weighted, probabilistic
-            or diagnostic. The activity is designed for education and reflection.
+            - **0–4: Lower bias score**
+            - **5–8: Moderate bias score**
+            - **9–12: Higher bias score**
+
+            This is a transparent educational scoring rule, not a validated
+            psychometric scale or diagnostic instrument.
             """
         )
 
@@ -620,11 +782,91 @@ def get_organiser_password():
         return os.getenv("ALBA_ANALYTICS_PASSWORD", "")
 
 
+
+def classify_sentiment(compound_score: float):
+    if compound_score >= 0.05:
+        return "Positive"
+    if compound_score <= -0.05:
+        return "Negative"
+    return "Neutral"
+
+
+def prepare_text_analytics(dataframe: pd.DataFrame):
+    """Analyse non-empty English free-text responses using VADER."""
+    if "free_text_response" not in dataframe.columns:
+        return pd.DataFrame()
+
+    text_df = dataframe[
+        dataframe["free_text_response"].fillna("").str.strip() != ""
+    ].copy()
+
+    if text_df.empty:
+        return text_df
+
+    analyser = SentimentIntensityAnalyzer()
+    sentiment_values = text_df["free_text_response"].astype(str).apply(
+        analyser.polarity_scores
+    )
+
+    text_df["sentiment_compound"] = sentiment_values.apply(
+        lambda item: item["compound"]
+    )
+    text_df["sentiment_positive"] = sentiment_values.apply(
+        lambda item: item["pos"]
+    )
+    text_df["sentiment_neutral"] = sentiment_values.apply(
+        lambda item: item["neu"]
+    )
+    text_df["sentiment_negative"] = sentiment_values.apply(
+        lambda item: item["neg"]
+    )
+    text_df["sentiment_label"] = text_df["sentiment_compound"].apply(
+        classify_sentiment
+    )
+    return text_df
+
+
+def make_word_cloud(text_series):
+    combined_text = " ".join(text_series.dropna().astype(str)).strip()
+    if not combined_text:
+        return None
+
+    custom_stopwords = set(STOPWORDS).union(
+        {
+            "scenario",
+            "answer",
+            "option",
+            "think",
+            "thought",
+            "would",
+            "could",
+            "because",
+            "selected",
+            "response",
+        }
+    )
+
+    cloud = WordCloud(
+        width=1400,
+        height=700,
+        background_color=THEME["card_bg"],
+        color_func=lambda *args, **kwargs: (
+            ALBA_COLORS["blue"] if IS_DARK else ALBA_COLORS["purple"]
+        ),
+        stopwords=custom_stopwords,
+        collocations=False,
+        max_words=120,
+        min_font_size=10,
+    ).generate(combined_text)
+
+    return cloud.to_array()
+
+
 # ============================================================
 # Navigation
 # ============================================================
 
-nav1, nav2, nav3 = st.columns([1.2, 1.2, 3.6])
+nav1, nav2, nav3, nav4 = st.columns([1.25, 1.05, 1.2, 2.5])
 
 with nav1:
     if st.button("🧠 Participant view", use_container_width=True):
@@ -637,6 +879,18 @@ with nav2:
         safe_rerun()
 
 with nav3:
+    selected_appearance = st.selectbox(
+        "Appearance",
+        ["Standard", "Dark"],
+        index=0 if st.session_state.appearance_mode == "Standard" else 1,
+        label_visibility="collapsed",
+        key="appearance_selector",
+    )
+    if selected_appearance != st.session_state.appearance_mode:
+        st.session_state.appearance_mode = selected_appearance
+        safe_rerun()
+
+with nav4:
     st.markdown(
         '<div class="small-muted" style="text-align:right;padding-top:0.7rem;">'
         "ALBA Network • Bias Reflection Activity</div>",
@@ -651,25 +905,20 @@ st.divider()
 # ============================================================
 
 def render_analytics():
-    st.title("Analytics dashboard")
+    st.title("Advanced analytics dashboard")
 
     df = load_data()
     if df.empty:
         st.info("No historical responses have been collected yet.")
         return
 
-    total_participants = df["participant_id"].nunique()
-    total_answers = len(df)
-    total_completed = int(total_answers / len(SCENARIOS))
-    alba_yes = df.loc[df["alba_member"] == "Yes", "participant_id"].nunique()
-
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Participants", total_participants)
-    m2.metric("Completed activities", total_completed)
-    m3.metric("Scenario responses", total_answers)
-    m4.metric("ALBA members", alba_yes)
-
-    st.markdown("### Explore responses")
+    required_score_columns = {"option_score", "total_score", "score_level"}
+    if not required_score_columns.issubset(df.columns):
+        st.warning(
+            "The available historical file uses an older scoring structure. "
+            "New responses will be stored separately using the inverse bias score."
+        )
+        return
 
     dimension_map = {
         "All respondents": None,
@@ -683,8 +932,9 @@ def render_analytics():
     filter_col1, filter_col2 = st.columns(2)
     with filter_col1:
         selected_dimension_label = st.selectbox(
-            "Compare or filter by",
+            "Filter dashboard by",
             list(dimension_map.keys()),
+            key="analytics_dimension",
         )
 
     selected_dimension = dimension_map[selected_dimension_label]
@@ -693,11 +943,16 @@ def render_analytics():
     with filter_col2:
         if selected_dimension:
             values = sorted(
-                filtered_df[selected_dimension].dropna().astype(str).unique().tolist()
+                filtered_df[selected_dimension]
+                .dropna()
+                .astype(str)
+                .unique()
+                .tolist()
             )
             selected_value = st.selectbox(
                 f"Select {selected_dimension_label.lower()}",
                 ["All"] + values,
+                key="analytics_dimension_value",
             )
             if selected_value != "All":
                 filtered_df = filtered_df[
@@ -708,125 +963,442 @@ def render_analytics():
                 "Population",
                 ["All historical respondents"],
                 disabled=True,
+                key="analytics_all_population",
             )
-
-    subgroup_n = filtered_df["participant_id"].nunique()
-    st.caption(f"Current view: {subgroup_n} participant(s)")
 
     if filtered_df.empty:
         st.warning("No responses match the selected filter.")
         return
 
-    # Consolidated table: scenario × options, with category labels
-    consolidated = (
-        filtered_df.groupby(
-            [
-                "scenario_number",
-                "bias_family",
-                "selected_option",
-                "reasoning_orientation",
+    participant_scores = (
+        filtered_df[
+            ["participant_id", "total_score", "score_level"]
+        ]
+        .drop_duplicates(subset=["participant_id"])
+    )
+
+    total_participants = participant_scores["participant_id"].nunique()
+    mean_score = participant_scores["total_score"].mean()
+    median_score = participant_scores["total_score"].median()
+    text_count = (
+        filtered_df["free_text_response"]
+        .fillna("")
+        .str.strip()
+        .astype(bool)
+        .sum()
+    )
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Participants", total_participants)
+    m2.metric("Mean bias score", f"{mean_score:.1f} / 12")
+    m3.metric("Median bias score", f"{median_score:.1f} / 12")
+    m4.metric("Written reflections", int(text_count))
+
+    overview_tab, scenario_tab, demographic_tab, text_tab = st.tabs(
+        [
+            "Overview",
+            "Scenario analysis",
+            "Demographic comparisons",
+            "Text insights",
+        ]
+    )
+
+    with overview_tab:
+        left, right = st.columns(2)
+
+        with left:
+            st.markdown("#### Distribution of total bias scores")
+            fig_hist = px.histogram(
+                participant_scores,
+                x="total_score",
+                nbins=13,
+                range_x=[0, 12],
+                labels={"total_score": "Total bias score"},
+                color_discrete_sequence=[ALBA_COLORS["purple"]],
+            )
+            fig_hist.update_layout(
+                bargap=0.08,
+                margin=dict(l=10, r=10, t=25, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color=THEME["text"],
+            )
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+        with right:
+            st.markdown("#### Bias-score bands")
+            level_order = [
+                "Lower bias score",
+                "Moderate bias score",
+                "Higher bias score",
             ]
+            level_counts = (
+                participant_scores["score_level"]
+                .value_counts()
+                .reindex(level_order, fill_value=0)
+                .rename_axis("Score level")
+                .reset_index(name="Participants")
+            )
+            fig_donut = px.pie(
+                level_counts,
+                values="Participants",
+                names="Score level",
+                hole=0.58,
+                color="Score level",
+                color_discrete_map={
+                    "Lower bias score": ALBA_COLORS["green"],
+                    "Moderate bias score": ALBA_COLORS["yellow"],
+                    "Higher bias score": ALBA_COLORS["pink"],
+                },
+            )
+            fig_donut.update_layout(
+                margin=dict(l=10, r=10, t=25, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                font_color=THEME["text"],
+                legend_title_text="",
+            )
+            st.plotly_chart(fig_donut, use_container_width=True)
+
+        st.markdown("#### Participant score timeline")
+        timeline = (
+            filtered_df[
+                ["participant_id", "timestamp", "total_score"]
+            ]
+            .drop_duplicates(subset=["participant_id"])
+            .sort_values("timestamp")
         )
-        .size()
-        .reset_index(name="Count")
-    )
+        timeline["Participant sequence"] = range(1, len(timeline) + 1)
 
-    scenario_totals = (
-        filtered_df.groupby("scenario_number")
-        .size()
-        .rename("Scenario total")
-        .reset_index()
-    )
-    consolidated = consolidated.merge(scenario_totals, on="scenario_number")
-    consolidated["Percent"] = (
-        100 * consolidated["Count"] / consolidated["Scenario total"]
-    ).round(1)
+        fig_timeline = px.scatter(
+            timeline,
+            x="Participant sequence",
+            y="total_score",
+            size_max=12,
+            trendline="lowess" if len(timeline) >= 8 else None,
+            labels={"total_score": "Total bias score"},
+            color_discrete_sequence=[ALBA_COLORS["blue"]],
+        )
+        fig_timeline.update_yaxes(range=[-0.3, 12.3])
+        fig_timeline.update_layout(
+            margin=dict(l=10, r=10, t=25, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color=THEME["text"],
+        )
+        st.plotly_chart(fig_timeline, use_container_width=True)
 
-    st.markdown("#### Consolidated response dashboard")
-    st.dataframe(
-        consolidated[
-            [
-                "scenario_number",
-                "bias_family",
-                "selected_option",
-                "reasoning_orientation",
-                "Count",
-                "Percent",
-            ]
-        ].rename(
-            columns={
+    with scenario_tab:
+        scenario_means = (
+            filtered_df.groupby(["scenario_number", "bias_family"])["option_score"]
+            .agg(["mean", "count"])
+            .reset_index()
+            .rename(columns={"mean": "Mean bias score", "count": "Responses"})
+        )
+
+        st.markdown("#### Mean bias score by scenario")
+        fig_scenario = px.bar(
+            scenario_means,
+            x="scenario_number",
+            y="Mean bias score",
+            color="bias_family",
+            text=scenario_means["Mean bias score"].round(2),
+            range_y=[0, 2],
+            labels={
                 "scenario_number": "Scenario",
-                "bias_family": "Educational bias theme",
-                "selected_option": "Option",
-                "reasoning_orientation": "Reasoning category",
-            }
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
-
-    chart_data = (
-        filtered_df.groupby(
-            ["scenario_number", "selected_option"]
+                "bias_family": "Bias theme",
+            },
+            color_discrete_sequence=[
+                ALBA_COLORS["purple"],
+                ALBA_COLORS["blue"],
+                ALBA_COLORS["green"],
+                ALBA_COLORS["pink"],
+                ALBA_COLORS["yellow"],
+            ],
         )
-        .size()
-        .reset_index(name="Count")
-    )
+        fig_scenario.update_traces(textposition="outside")
+        fig_scenario.update_layout(
+            showlegend=False,
+            margin=dict(l=10, r=10, t=25, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color=THEME["text"],
+        )
+        st.plotly_chart(fig_scenario, use_container_width=True)
 
-    fig_options = px.bar(
-        chart_data,
-        x="scenario_number",
-        y="Count",
-        color="selected_option",
-        barmode="group",
-        labels={
-            "scenario_number": "Scenario",
-            "selected_option": "Selected option",
-        },
-        color_discrete_sequence=[
-            ALBA_COLORS["purple"],
-            ALBA_COLORS["blue"],
-            ALBA_COLORS["pink"],
-        ],
-    )
-    fig_options.update_layout(
-        legend_title_text="Option",
-        margin=dict(l=10, r=10, t=25, b=10),
-    )
-    st.plotly_chart(fig_options, use_container_width=True)
+        option_distribution = (
+            filtered_df.groupby(
+                ["scenario_number", "selected_option"]
+            )
+            .size()
+            .reset_index(name="Count")
+        )
+        totals = option_distribution.groupby("scenario_number")["Count"].transform("sum")
+        option_distribution["Percent"] = 100 * option_distribution["Count"] / totals
 
-    orientation_data = (
-        filtered_df["reasoning_orientation"]
-        .value_counts()
-        .rename_axis("Reasoning category")
-        .reset_index(name="Count")
-    )
+        st.markdown("#### Option selection by scenario")
+        fig_stack = px.bar(
+            option_distribution,
+            x="scenario_number",
+            y="Percent",
+            color="selected_option",
+            barmode="stack",
+            text=option_distribution["Percent"].round(1),
+            labels={
+                "scenario_number": "Scenario",
+                "selected_option": "Option",
+            },
+            color_discrete_sequence=[
+                ALBA_COLORS["purple"],
+                ALBA_COLORS["blue"],
+                ALBA_COLORS["pink"],
+            ],
+        )
+        fig_stack.update_layout(
+            yaxis_title="Percentage of responses",
+            legend_title_text="Option",
+            margin=dict(l=10, r=10, t=25, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color=THEME["text"],
+        )
+        st.plotly_chart(fig_stack, use_container_width=True)
 
-    fig_orientation = px.bar(
-        orientation_data,
-        x="Reasoning category",
-        y="Count",
-        color="Reasoning category",
-        color_discrete_sequence=[
-            ALBA_COLORS["purple"],
-            ALBA_COLORS["blue"],
-            ALBA_COLORS["green"],
-            ALBA_COLORS["pink"],
-            ALBA_COLORS["yellow"],
-        ],
-    )
-    fig_orientation.update_layout(
-        showlegend=False,
-        margin=dict(l=10, r=10, t=25, b=10),
-    )
-    st.plotly_chart(fig_orientation, use_container_width=True)
+        radar_values = scenario_means["Mean bias score"].tolist()
+        radar_labels = scenario_means["scenario_number"].tolist()
+        if radar_values:
+            radar_values_closed = radar_values + [radar_values[0]]
+            radar_labels_closed = radar_labels + [radar_labels[0]]
+            fig_radar = go.Figure()
+            fig_radar.add_trace(
+                go.Scatterpolar(
+                    r=radar_values_closed,
+                    theta=radar_labels_closed,
+                    fill="toself",
+                    name="Mean bias score",
+                    line=dict(color=ALBA_COLORS["blue"]),
+                    fillcolor="rgba(39,166,222,0.25)",
+                )
+            )
+            fig_radar.update_layout(
+                title="Bias profile across scenarios",
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 2],
+                        color=THEME["text"],
+                    ),
+                    bgcolor="rgba(0,0,0,0)",
+                ),
+                paper_bgcolor="rgba(0,0,0,0)",
+                font_color=THEME["text"],
+                showlegend=False,
+                margin=dict(l=40, r=40, t=60, b=40),
+            )
+            st.plotly_chart(fig_radar, use_container_width=True)
+
+    with demographic_tab:
+        demographic_dimension = st.selectbox(
+            "Break down total scores by",
+            [
+                "career_stage",
+                "age_group",
+                "country",
+                "gender",
+                "alba_member",
+            ],
+            format_func=lambda value: {
+                "career_stage": "Career stage / role",
+                "age_group": "Age group",
+                "country": "Country",
+                "gender": "Gender",
+                "alba_member": "ALBA membership",
+            }[value],
+            key="demographic_chart_dimension",
+        )
+
+        demographic_scores = (
+            filtered_df[
+                ["participant_id", demographic_dimension, "total_score"]
+            ]
+            .drop_duplicates(subset=["participant_id"])
+            .dropna()
+        )
+
+        counts_by_group = demographic_scores[demographic_dimension].value_counts()
+        allowed_groups = counts_by_group[counts_by_group >= 5].index
+        display_scores = demographic_scores[
+            demographic_scores[demographic_dimension].isin(allowed_groups)
+        ]
+
+        if display_scores.empty:
+            st.info(
+                "No demographic subgroup currently has at least five participants. "
+                "The threshold protects privacy and avoids unstable comparisons."
+            )
+        else:
+            fig_box = px.box(
+                display_scores,
+                x=demographic_dimension,
+                y="total_score",
+                points="all",
+                labels={
+                    demographic_dimension: "",
+                    "total_score": "Total bias score",
+                },
+                color=demographic_dimension,
+                color_discrete_sequence=[
+                    ALBA_COLORS["purple"],
+                    ALBA_COLORS["blue"],
+                    ALBA_COLORS["green"],
+                    ALBA_COLORS["pink"],
+                    ALBA_COLORS["yellow"],
+                ],
+            )
+            fig_box.update_yaxes(range=[-0.3, 12.3])
+            fig_box.update_layout(
+                showlegend=False,
+                margin=dict(l=10, r=10, t=25, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color=THEME["text"],
+            )
+            st.plotly_chart(fig_box, use_container_width=True)
+
+            group_summary = (
+                display_scores.groupby(demographic_dimension)["total_score"]
+                .agg(["count", "mean", "median", "std"])
+                .reset_index()
+                .rename(
+                    columns={
+                        "count": "Participants",
+                        "mean": "Mean score",
+                        "median": "Median score",
+                        "std": "Standard deviation",
+                    }
+                )
+            )
+            group_summary["Mean score"] = group_summary["Mean score"].round(2)
+            group_summary["Median score"] = group_summary["Median score"].round(2)
+            group_summary["Standard deviation"] = (
+                group_summary["Standard deviation"].round(2)
+            )
+            st.dataframe(group_summary, use_container_width=True, hide_index=True)
+
+    with text_tab:
+        st.markdown("#### English free-text reflections")
+        text_df = prepare_text_analytics(filtered_df)
+
+        if text_df.empty:
+            st.info("No written reflections are currently available for text analysis.")
+        else:
+            st.caption(
+                "Sentiment is estimated using VADER, which is designed for English text. "
+                "It describes the emotional polarity of the wording, not the participant's "
+                "mental state, intent or attitude toward ALBA."
+            )
+
+            sentiment_counts = (
+                text_df["sentiment_label"]
+                .value_counts()
+                .reindex(["Positive", "Neutral", "Negative"], fill_value=0)
+                .rename_axis("Sentiment")
+                .reset_index(name="Responses")
+            )
+
+            average_compound = text_df["sentiment_compound"].mean()
+            tm1, tm2, tm3 = st.columns(3)
+            tm1.metric("Analysed reflections", len(text_df))
+            tm2.metric("Mean sentiment", f"{average_compound:+.2f}")
+            tm3.metric(
+                "Most common sentiment",
+                sentiment_counts.sort_values("Responses", ascending=False).iloc[0][
+                    "Sentiment"
+                ],
+            )
+
+            word_cloud_image = make_word_cloud(text_df["free_text_response"])
+            if word_cloud_image is not None:
+                st.markdown("##### Word cloud")
+                st.image(word_cloud_image, use_container_width=True)
+
+            text_col1, text_col2 = st.columns(2)
+
+            with text_col1:
+                fig_sentiment = px.pie(
+                    sentiment_counts,
+                    values="Responses",
+                    names="Sentiment",
+                    hole=0.55,
+                    color="Sentiment",
+                    color_discrete_map={
+                        "Positive": ALBA_COLORS["green"],
+                        "Neutral": ALBA_COLORS["blue"],
+                        "Negative": ALBA_COLORS["pink"],
+                    },
+                )
+                fig_sentiment.update_layout(
+                    title="Sentiment categories",
+                    margin=dict(l=10, r=10, t=50, b=10),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    font_color=THEME["text"],
+                )
+                st.plotly_chart(fig_sentiment, use_container_width=True)
+
+            with text_col2:
+                fig_compound = px.histogram(
+                    text_df,
+                    x="sentiment_compound",
+                    nbins=15,
+                    range_x=[-1, 1],
+                    labels={
+                        "sentiment_compound": "VADER compound sentiment"
+                    },
+                    color_discrete_sequence=[ALBA_COLORS["purple"]],
+                )
+                fig_compound.update_layout(
+                    title="Sentiment-score distribution",
+                    margin=dict(l=10, r=10, t=50, b=10),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font_color=THEME["text"],
+                )
+                st.plotly_chart(fig_compound, use_container_width=True)
+
+            sentiment_scenario = (
+                text_df.groupby("scenario_number")["sentiment_compound"]
+                .mean()
+                .reset_index()
+            )
+            fig_sentiment_scenario = px.bar(
+                sentiment_scenario,
+                x="scenario_number",
+                y="sentiment_compound",
+                range_y=[-1, 1],
+                labels={
+                    "scenario_number": "Scenario",
+                    "sentiment_compound": "Mean VADER sentiment",
+                },
+                color="sentiment_compound",
+                color_continuous_scale=[
+                    [0.0, ALBA_COLORS["pink"]],
+                    [0.5, ALBA_COLORS["blue"]],
+                    [1.0, ALBA_COLORS["green"]],
+                ],
+            )
+            fig_sentiment_scenario.update_layout(
+                coloraxis_showscale=False,
+                margin=dict(l=10, r=10, t=25, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color=THEME["text"],
+            )
+            st.plotly_chart(fig_sentiment_scenario, use_container_width=True)
 
     st.caption(
-        "Small subgroups should be interpreted cautiously. For public display, "
-        "consider suppressing demographic comparisons where fewer than five participants are represented."
+        "All demographic breakdowns should be interpreted cautiously. "
+        "Groups with fewer than five participants are suppressed."
     )
 
-    # Backend-only export: no raw or free-text tables displayed
     with st.expander("Organiser export"):
         organiser_password = get_organiser_password()
 
@@ -850,13 +1422,11 @@ def render_analytics():
                     mime="text/csv",
                 )
 
-                free_text_df = df[
-                    df["free_text_response"].fillna("").str.strip() != ""
-                ]
+                text_export = prepare_text_analytics(df)
                 st.download_button(
-                    "Download anonymised free-text responses",
-                    data=free_text_df.to_csv(index=False).encode("utf-8-sig"),
-                    file_name="alba_bias_activity_free_text_export.csv",
+                    "Download free-text sentiment export",
+                    data=text_export.to_csv(index=False).encode("utf-8-sig"),
+                    file_name="alba_bias_activity_text_sentiment.csv",
                     mime="text/csv",
                 )
             elif entered_password:
@@ -1056,9 +1626,8 @@ def render_scenario():
             <p><strong>{scenario["bias_family"]}</strong></p>
             <p>{scenario["explanation"]}</p>
             <p class="small-muted">
-            Your selected response was pre-tagged as:
-            <strong>{option["orientation"]}</strong>
-            ({option["detail"]}).
+            This response receives <strong>{option["score"]} point(s)</strong>.
+            {option["rationale"]}
             </p>
             </div>
             """,
@@ -1094,47 +1663,58 @@ def render_summary():
     st.title("Your reflection summary")
     st.markdown(
         """
-        This summary shows the reasoning categories linked to your selected responses.
-        It does not measure personality, ability or unconscious bias, and it should not
-        be interpreted diagnostically.
+        Your result is based on six **bias scores**. Each response contributes
+        **0, 1 or 2 points**, and a larger total indicates that more bias-related
+        responses appeared across these scenarios.
         """
     )
     render_how_it_works()
 
     summary_df = participant_summary_dataframe()
-    counts = (
-        summary_df["Reasoning category"]
-        .value_counts()
-        .rename_axis("Reasoning category")
-        .reset_index(name="Count")
-    )
+    total_score = int(summary_df["Points"].sum())
+    score_level, score_interpretation = interpret_score(total_score)
 
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.metric("Total bias score", f"{total_score} / 12")
+    with col2:
+        st.markdown(
+            f"""
+            <div class="education-card">
+                <h3>{score_level}</h3>
+                <p>{score_interpretation}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    score_chart = summary_df[["Scenario", "Points"]].copy()
     fig = px.bar(
-        counts,
-        x="Reasoning category",
-        y="Count",
-        color="Reasoning category",
-        color_discrete_sequence=[
-            ALBA_COLORS["purple"],
-            ALBA_COLORS["blue"],
-            ALBA_COLORS["green"],
-            ALBA_COLORS["pink"],
-            ALBA_COLORS["yellow"],
+        score_chart,
+        x="Scenario",
+        y="Points",
+        range_y=[0, 2],
+        text="Points",
+        color="Points",
+        color_continuous_scale=[
+            [0.0, ALBA_COLORS["pink"]],
+            [0.5, ALBA_COLORS["yellow"]],
+            [1.0, ALBA_COLORS["green"]],
         ],
     )
     fig.update_layout(
-        showlegend=False,
+        coloraxis_showscale=False,
         margin=dict(l=10, r=10, t=25, b=10),
     )
+    fig.update_traces(textposition="outside")
     st.plotly_chart(fig, use_container_width=True)
 
-    with st.expander("Review my six responses"):
+    with st.expander("Review my six responses and bias scores"):
         st.dataframe(summary_df, hide_index=True, use_container_width=True)
 
-    # Dynamic comparison with historical data
     historical_df = load_data()
 
-    if not historical_df.empty:
+    if not historical_df.empty and "total_score" in historical_df.columns:
         st.markdown("### Compare with other respondents")
 
         comparison_dimension_map = {
@@ -1156,9 +1736,7 @@ def render_summary():
         comparison_df = historical_df.copy()
 
         if comparison_dimension:
-            participant_value = st.session_state.demographics[
-                comparison_dimension
-            ]
+            participant_value = st.session_state.demographics[comparison_dimension]
             comparison_df = comparison_df[
                 comparison_df[comparison_dimension] == participant_value
             ]
@@ -1167,7 +1745,13 @@ def render_summary():
                 f"{participant_value}"
             )
 
-        comparison_n = comparison_df["participant_id"].nunique()
+        participant_scores = (
+            comparison_df[
+                ["participant_id", "total_score", "score_level"]
+            ]
+            .drop_duplicates(subset=["participant_id"])
+        )
+        comparison_n = participant_scores["participant_id"].nunique()
 
         if comparison_n < 5:
             st.info(
@@ -1175,35 +1759,40 @@ def render_summary():
                 "are currently represented in this subgroup."
             )
         else:
-            comparison_data = (
-                comparison_df.groupby(
-                    ["scenario_number", "selected_option"]
-                )
-                .size()
-                .reset_index(name="Count")
+            level_order = [
+                "Low bias awareness",
+                "Developing awareness",
+                "Strong bias awareness",
+            ]
+            level_counts = (
+                participant_scores["score_level"]
+                .value_counts()
+                .reindex(level_order, fill_value=0)
+                .rename_axis("Score level")
+                .reset_index(name="Participants")
             )
 
             comparison_fig = px.bar(
-                comparison_data,
-                x="scenario_number",
-                y="Count",
-                color="selected_option",
-                barmode="group",
-                labels={
-                    "scenario_number": "Scenario",
-                    "selected_option": "Selected option",
-                },
+                level_counts,
+                x="Score level",
+                y="Participants",
+                color="Score level",
                 color_discrete_sequence=[
-                    ALBA_COLORS["purple"],
-                    ALBA_COLORS["blue"],
                     ALBA_COLORS["pink"],
+                    ALBA_COLORS["yellow"],
+                    ALBA_COLORS["green"],
                 ],
             )
             comparison_fig.update_layout(
+                showlegend=False,
                 margin=dict(l=10, r=10, t=25, b=10),
             )
             st.plotly_chart(comparison_fig, use_container_width=True)
 
+    st.info(
+        "This is a reflective educational tool, not a diagnostic instrument. "
+        "The result is intended to surface patterns worth noticing, not to label individuals."
+    )
     st.success("Thank you for taking part.")
 
     if st.button("CLEAR — start a new participant", use_container_width=True):
